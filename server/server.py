@@ -37,9 +37,11 @@ class SynchronizedSubscriber:
                 self.eye_tracker_data = message['data'].decode('utf-8')
 
     def process_data(self):
-        timestamp = datetime.now().isoformat()
-        mt_x, mt_y = self.moving_target_data['x'], self.moving_target_data['y']
-        et_x, et_y = self.eye_tracker_data['x'], self.eye_tracker_data['y']
+        mt_data_stripped = str(self.moving_target_data).split(";")
+        et_data_stripped = str(self.eye_tracker_data).split(";")
+        timestamp = mt_data_stripped[2]
+        mt_x, mt_y = mt_data_stripped[0], mt_data_stripped[1]
+        et_x, et_y = et_data_stripped[0], et_data_stripped[1]
         
         # Add data to buffer
         self.data_buffer.append([timestamp, mt_x, mt_y, et_x, et_y])
@@ -83,7 +85,7 @@ class SynchronizedSubscriber:
             print("Subscriber stopped.")
 
 if __name__ == "__main__":
-    csv_filename = f"eye_tracking_data_{int(time.time())}.csv"
+    csv_filename = f"records/eye_tracking_data_{int(time.time())}.csv"
     subscriber = SynchronizedSubscriber(csv_filename)
     subscriber.subscribe()
     subscriber.run()
