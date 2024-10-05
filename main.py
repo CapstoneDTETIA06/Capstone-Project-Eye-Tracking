@@ -1,3 +1,4 @@
+from random import randint
 import pygame
 import redis
 
@@ -24,11 +25,9 @@ pygame.display.set_caption("Simple Pygame")
 x_coord, y_coord = [], []
 
 # target
-ball_radius = 7
+ball_radius = 10
 ball_x = WINDOW_W // 2
 ball_y = WINDOW_H // 2
-# ball_speed_x = 1
-# ball_speed_y = 1
 
 start_button_width = 100
 start_button_height = 50
@@ -48,9 +47,14 @@ simulation_started = False
 fullscreen = False
 countdownTick = 0
 task1_started = False
+task1_done = False
 task2_started = False
+task2_done = False
 render_countdown = False
 render_finish_msg = False
+
+ball_pos = "left"
+next_run = 24
 
 def StartTask1Button(_screen):
     font = pygame.font.Font(None, 48)
@@ -78,12 +82,19 @@ def toggle_fullscreen():
 
 def PreTask1(_screen):
     font = pygame.font.Font(None, 108)
-    text = font.render("Task #1: Follow the Target!", True, (255, 255, 255))
+    text = font.render("Task #1: Smooth Moving Target", True, (255, 255, 255))
     text_rect = text.get_rect(center=(WINDOW_W // 2, WINDOW_H // 3))
     _screen.blit(text, text_rect)
     
     StartTask1Button(_screen)
 
+def PreTask2(_screen):
+    font = pygame.font.Font(None, 108)
+    text = font.render("Task #2: Instant Moving Target", True, (255, 255, 255))
+    text_rect = text.get_rect(center=(WINDOW_W // 2, WINDOW_H // 3))
+    _screen.blit(text, text_rect)
+    
+    StartTask1Button(_screen)
 
 def FinishedMsg(_screen):
     font = pygame.font.Font(None, 108)
@@ -104,6 +115,10 @@ while True:
                     task1_started = True
                     x_coord, y_coord = trail_generator.generate_trail(WINDOW_W, WINDOW_H)
                     ball_x, ball_y = x_coord[0], y_coord[0]
+                if task1_done and not task2_started:
+                    task2_started = True
+                    ball_radius = 10
+                    ball_x, ball_y = WINDOW_W // 2 - 200, WINDOW_H // 2
                 if not render_countdown:
                     render_countdown = True
         # elif event.type == pygame.KEYDOWN:
@@ -115,14 +130,29 @@ while True:
                 screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
 
     if simulation_started:
-        if ticks == len(x_coord):
-            render_finish_msg = True
-            simulation_started = False
-            ticks = 0
-        else:
-            ball_x = x_coord[ticks]
-            ball_y = y_coord[ticks]
-            r.publish("MovingTarget", f"{ball_x};{ball_y};{int(time.time_ns()/10e3)}")
+        if not task1_done:
+            if ticks == len(x_coord):
+                render_finish_msg = True
+                simulation_started = False
+                task1_done = True
+                ticks = 0
+            else:
+                ball_x = x_coord[ticks]
+                ball_y = y_coord[ticks]
+                r.publish("MovingTarget", f"{ball_x};{ball_y};{int(time.time_ns()/10e3)}")
+                ticks += 1
+        elif task1_done and not task2_done:
+            if ticks == 24 * 10:
+                task2_done = True
+                render_finish_msg = True
+            if ticks == next_run:
+                if ball_pos == "left":
+                    ball_x = ball_x + 400
+                    ball_pos = "right"
+                elif ball_pos == "right":
+                    ball_x = ball_x - 400
+                    ball_pos = "left"
+                next_run += randint(36, 96)
             ticks += 1
 
     screen.fill(GRAY)
@@ -130,6 +160,9 @@ while True:
     
     if not task1_started:
         PreTask1(screen)
+    
+    if not task2_started and task1_done and not render_finish_msg:
+        PreTask2(screen)
     
     if render_finish_msg:
         FinishedMsg(screen)
