@@ -2,7 +2,7 @@ import numpy as np
 import random
 from sklearn.preprocessing import MinMaxScaler
 
-TIME = 30
+TIME = 60
 FPS = 25 * TIME
 
 def wave(x):
@@ -27,8 +27,8 @@ def generate_trail(screen_width, screen_height):
     y = wave(timeseries)
     y_reshaped = y.reshape(1, -1)[0]
 
-    x_coord = [(200*np.cos(np.pi*_y/180))+(screen_width/2) for _y in y_reshaped]
-    y_coord = [(200*np.sin(np.pi*_y/180))+(screen_height/2) for _y in y_reshaped]
+    x_coord = [(300*np.cos(np.pi*_y/180))+(screen_width/2) for _y in y_reshaped]
+    y_coord = [(300*np.sin(np.pi*_y/180))+(screen_height/2) for _y in y_reshaped]
 
     x_coord = np.array(x_coord).tolist()
     y_coord = np.array(y_coord).tolist()

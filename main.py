@@ -17,15 +17,16 @@ GRAY = (100, 100, 100)
 
 r = redis.Redis()
 pygame.init()
-# screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.NOFRAME)
-screen = pygame.display.set_mode((1280, 720), pygame.RESIZABLE)
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.NOFRAME)
+# screen = pygame.display.set_mode((1280, 720), pygame.RESIZABLE)
 WINDOW_W, WINDOW_H = screen.get_size()
+print(WINDOW_W, WINDOW_H)
 pygame.display.set_caption("Simple Pygame")
 
 x_coord, y_coord = [], []
 
 # target
-ball_radius = 10
+ball_radius = 20
 ball_x = WINDOW_W // 2
 ball_y = WINDOW_H // 2
 
@@ -117,7 +118,7 @@ while True:
                     ball_x, ball_y = x_coord[0], y_coord[0]
                 if task1_done and not task2_started:
                     task2_started = True
-                    ball_radius = 10
+                    ball_radius = 20
                     ball_x, ball_y = WINDOW_W // 2 - 200, WINDOW_H // 2
                 if not render_countdown:
                     render_countdown = True
@@ -139,20 +140,21 @@ while True:
             else:
                 ball_x = x_coord[ticks]
                 ball_y = y_coord[ticks]
-                r.publish("MovingTarget", f"{ball_x};{ball_y};{int(time.time_ns()/10e3)}")
+                r.publish("MovingTarget", f"{ball_x};{ball_y};{int(time.time_ns()/10e3)};0;{WINDOW_W};{WINDOW_H}")
                 ticks += 1
         elif task1_done and not task2_done:
-            if ticks == 24 * 10:
+            if ticks == 24 * 60:
                 task2_done = True
                 render_finish_msg = True
             if ticks == next_run:
                 if ball_pos == "left":
-                    ball_x = ball_x + 400
+                    ball_x = ball_x + 500
                     ball_pos = "right"
                 elif ball_pos == "right":
-                    ball_x = ball_x - 400
+                    ball_x = ball_x - 500
                     ball_pos = "left"
                 next_run += randint(36, 96)
+            r.publish("MovingTarget", f"{ball_x};{ball_y};{int(time.time_ns()/10e3)};1;{WINDOW_W};{WINDOW_H}")
             ticks += 1
 
     screen.fill(GRAY)

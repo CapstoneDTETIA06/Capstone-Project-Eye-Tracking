@@ -1,10 +1,10 @@
 import redis
 import time
-import json
+# import json
 from threading import Lock
 import csv
 from collections import deque
-from datetime import datetime
+from datetime import date
 
 class SynchronizedSubscriber:
     def __init__(self, csv_filename, buffer_size=100):
@@ -19,7 +19,11 @@ class SynchronizedSubscriber:
         self.write_interval = 5  # Write to CSV every 5 seconds
 
         # Initialize CSV file with headers
-        with open(self.csv_filename, 'w', newline='') as csvfile:
+        with open(self.csv_filename[0], 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Timestamp', 'MovingTarget_X', 'MovingTarget_Y', 'EyeTracker_X', 'EyeTracker_Y'])
+        
+        with open(self.csv_filename[1], 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['Timestamp', 'MovingTarget_X', 'MovingTarget_Y', 'EyeTracker_X', 'EyeTracker_Y'])
 
@@ -41,7 +45,7 @@ class SynchronizedSubscriber:
         et_data_stripped = str(self.eye_tracker_data).split(";")
         timestamp = mt_data_stripped[2]
         mt_x, mt_y = mt_data_stripped[0], mt_data_stripped[1]
-        et_x, et_y = et_data_stripped[0], et_data_stripped[1]
+        et_x, et_y = float(et_data_stripped[0]) * float(mt_data_stripped[4]), float(et_data_stripped[1]) * float(mt_data_stripped[5])
         
         # Add data to buffer
         self.data_buffer.append([timestamp, mt_x, mt_y, et_x, et_y])
@@ -49,19 +53,20 @@ class SynchronizedSubscriber:
         # Check if it's time to write to CSV
         current_time = time.time()
         if current_time - self.last_write_time >= self.write_interval:
-            self.write_to_csv()
+            self.write_to_csv(int(mt_data_stripped[3]))
             self.last_write_time = current_time
 
-    def write_to_csv(self):
+    def write_to_csv(self, movement_type: int):
+        _filename = self.csv_filename[movement_type]
         if not self.data_buffer:
             return
 
-        with open(self.csv_filename, 'a', newline='') as csvfile:
+        with open(_filename, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerows(self.data_buffer)
         
         self.data_buffer.clear()
-        print(f"Data written to {self.csv_filename}")
+        print(f"Data written to {_filename}")
 
     def subscribe(self):
         self.pubsub.subscribe(**{
@@ -70,7 +75,7 @@ class SynchronizedSubscriber:
         })
 
     def run(self):
-        print(f"Starting synchronized subscriber... Data will be saved to {self.csv_filename}")
+        print(f"Starting synchronized subscriber... Data will be saved to {self.csv_filename[0]}, {self.csv_filename[1]}")
         print("Listening for messages... (Ctrl+C to stop)")
 
         subscription_thread = self.pubsub.run_in_thread(sleep_time=0.001)
@@ -85,7 +90,8 @@ class SynchronizedSubscriber:
             print("Subscriber stopped.")
 
 if __name__ == "__main__":
-    csv_filename = f"records/eye_tracking_data_{int(time.time())}.csv"
+    current_time = int(time.time())
+    csv_filename = [f"records/ar-{date.today().strftime('%Y-%m-%d')}_SP_{current_time}.csv", f"records/ar-{date.today().strftime('%Y-%m-%d')}_SEM_{current_time}.csv"]
     subscriber = SynchronizedSubscriber(csv_filename)
     subscriber.subscribe()
     subscriber.run()
