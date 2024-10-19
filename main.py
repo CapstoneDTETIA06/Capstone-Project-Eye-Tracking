@@ -13,6 +13,8 @@ BLACK = (0, 0, 0)
 YELLOW = (255, 255, 0)
 RED = (255, 0, 0)
 GRAY = (100, 100, 100)
+BLACK_2 = (18, 18, 18)
+CYAN = (0, 255, 238)
 
 
 r = redis.Redis()
@@ -157,8 +159,8 @@ while True:
             r.publish("MovingTarget", f"{ball_x};{ball_y};{int(time.time_ns()/10e3)};1;{WINDOW_W};{WINDOW_H}")
             ticks += 1
 
-    screen.fill(GRAY)
-    pygame.draw.circle(screen, RED, (int(ball_x), int(ball_y)), ball_radius)
+    screen.fill(BLACK_2)
+    pygame.draw.circle(screen, CYAN, (int(ball_x), int(ball_y)), ball_radius)
     
     if not task1_started:
         PreTask1(screen)
