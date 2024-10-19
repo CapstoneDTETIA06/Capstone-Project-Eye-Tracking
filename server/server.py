@@ -91,7 +91,8 @@ class SynchronizedSubscriber:
 
 if __name__ == "__main__":
     current_time = int(time.time())
-    csv_filename = [f"records/ar-{date.today().strftime('%Y-%m-%d')}_SP_{current_time}.csv", f"records/ar-{date.today().strftime('%Y-%m-%d')}_SEM_{current_time}.csv"]
+    codename = input("Insert code name: ")
+    csv_filename = [f"records/{codename}-{date.today().strftime('%Y-%m-%d')}_SP_{current_time}.csv", f"records/{codename}-{date.today().strftime('%Y-%m-%d')}_SEM_{current_time}.csv"]
     subscriber = SynchronizedSubscriber(csv_filename)
     subscriber.subscribe()
     subscriber.run()
